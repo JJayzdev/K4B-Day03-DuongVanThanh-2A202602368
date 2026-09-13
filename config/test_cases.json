@@ -1,0 +1,37 @@
+[
+  {
+    "id": "TC01",
+    "type": "direct_query",
+    "question": "Chào bạn, bạn có thể giới thiệu quy chế học vụ cơ bản của Đại học VinUni không?",
+    "expected_behavior": "Chatbot trả lời trực tiếp từ System Prompt, không cần gọi bất kỳ Tool nào.",
+    "complexity": "Low"
+  },
+  {
+    "id": "TC02",
+    "type": "single_tool_query",
+    "question": "Hãy tra cứu thông tin học vụ của sinh viên SV2026001.",
+    "expected_behavior": "Agent nhận diện nhu cầu tra cứu, tự động phát sinh Tool Call 'academic_query' với mã SV2026001.",
+    "complexity": "Medium"
+  },
+  {
+    "id": "TC03",
+    "type": "expense_recording",
+    "question": "Ghi nhận một khoản chi 85000 VND cho bữa trưa hôm nay vào danh mục Ăn uống.",
+    "expected_behavior": "Agent trích xuất đúng số tiền, loại tiền, danh mục và thời điểm giao dịch, sau đó phát sinh Tool Call 'record_expense' để lưu khoản chi và xác nhận kết quả.",
+    "complexity": "Medium"
+  },
+  {
+    "id": "TC04",
+    "type": "multi_step_reasoning",
+    "question": "Tháng này tôi đã chi 6500000 VND, ngân sách tháng là 8000000 VND. Hãy kiểm tra số tiền còn lại và cho biết nếu tôi chi thêm 2000000 VND cho mua sắm thì có vượt ngân sách không.",
+    "expected_behavior": "Agent thực hiện chuỗi suy luận ReAct: tra cứu hoặc tổng hợp chi tiêu và ngân sách hiện tại, tính số dư và tác động của khoản chi dự kiến, sau đó trả lời rõ khoản chi có vượt ngân sách hay không.",
+    "complexity": "High"
+  },
+  {
+    "id": "TC05",
+    "type": "edge_case_handling",
+    "question": "Hãy ghi nhận khoản chi 'năm mươi nghìn' nhưng tôi không cho biết loại tiền và danh mục chi tiêu.",
+    "expected_behavior": "Agent nhận diện các thông tin bắt buộc còn thiếu hoặc mơ hồ, không tự bịa dữ liệu và hỏi lại người dùng về loại tiền cùng danh mục trước khi gọi Tool.",
+    "complexity": "Medium"
+  }
+]

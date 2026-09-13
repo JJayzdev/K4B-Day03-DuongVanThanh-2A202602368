@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💰 Trợ lý Quản lý Chi tiêu — Demo ReAct Agent</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --bg:#0a0e1a;--bg-card:rgba(17,24,39,0.7);--border:rgba(255,255,255,0.08);
+            --text:#f1f5f9;--text2:#94a3b8;--muted:#64748b;
+            --emerald:#10b981;--cyan:#06b6d4;--amber:#f59e0b;--rose:#f43f5e;--purple:#8b5cf6;--indigo:#6366f1;--blue:#3b82f6;
+            --mono:'JetBrains Mono',monospace;--sans:'Inter',-apple-system,sans-serif;
+        }
+        html{scroll-behavior:smooth}
+        body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+
+        .bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+        .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.12;animation:orbF 20s ease-in-out infinite}
+        .orb:nth-child(1){width:500px;height:500px;background:var(--emerald);top:-100px;left:-100px}
+        .orb:nth-child(2){width:400px;height:400px;background:var(--cyan);top:40%;right:-80px;animation-delay:-7s}
+        .orb:nth-child(3){width:350px;height:350px;background:var(--amber);bottom:-50px;left:30%;animation-delay:-14s}
+        @keyframes orbF{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-30px) scale(1.05)}66%{transform:translate(-20px,20px) scale(.95)}}
+
+        .container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+        /* HERO */
+        .hero{padding:60px 0 40px;text-align:center}
+        .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:var(--emerald);font-size:13px;font-weight:600;padding:6px 16px;border-radius:100px;margin-bottom:20px}
+        .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;background:linear-gradient(135deg,#a7f3d0,#6ee7b7,#34d399,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.2;margin-bottom:12px}
+        .hero p{font-size:1rem;color:var(--text2);max-width:700px;margin:0 auto 20px}
+        .hero-meta{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+
+        /* SECTION */
+        .sect{margin-bottom:48px}
+        .sect-title{font-size:1.4rem;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+        .sect-desc{color:var(--text2);margin-bottom:20px;font-size:14px}
+        hr.divider{border:none;border-top:1px solid var(--border);margin:48px 0}
+
+        /* CARD */
+        .card{background:var(--bg-card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:16px;transition:all .3s}
+        .card:hover{border-color:rgba(255,255,255,.12);transform:translateY(-1px)}
+
+        /* STATS */
+        .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+        .stat{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+        .stat-val{font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .stat-lbl{font-size:12px;color:var(--muted);margin-top:2px}
+
+        /* EXPENSE CARDS */
+        .exp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+        .exp-item{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+        .exp-item .icon{font-size:22px}
+        .exp-item .cat{font-size:12px;color:var(--muted)}
+        .exp-item .amt{font-size:1rem;font-weight:700;color:var(--amber);margin-top:2px}
+
+        /* TABLE */
+        .tbl{width:100%;border-collapse:collapse;font-size:13px}
+        .tbl th{padding:10px 14px;text-align:left;background:rgba(16,185,129,.1);color:var(--emerald);font-weight:600;font-size:12px}
+        .tbl td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text2)}
+        .tbl tr:last-child td{border-bottom:none}
+        .badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600}
+        .badge-ok{background:rgba(16,185,129,.15);color:var(--emerald)}
+
+        /* CHAT */
+        .chat-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        @media(max-width:768px){.chat-wrap{grid-template-columns:1fr}}
+        .chat-panel{border-radius:16px;background:var(--bg-card);border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column}
+        .chat-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+        .chat-hdr .dot{width:8px;height:8px;border-radius:50%}
+        .chat-msgs{flex:1;padding:16px;overflow-y:auto;min-height:280px;max-height:400px;display:flex;flex-direction:column;gap:10px}
+        .msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5;animation:msgIn .3s ease}
+        @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+        .msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--emerald),var(--cyan));color:#fff;border-bottom-right-radius:4px}
+        .msg.bot{align-self:flex-start;background:rgba(255,255,255,.06);border:1px solid var(--border);border-bottom-left-radius:4px}
+        .msg.sys{align-self:center;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--emerald);font-size:12px;font-family:var(--mono);max-width:95%}
+        .chat-bar{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
+        .chat-in{flex:1;padding:8px 14px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-family:var(--sans);font-size:13px;outline:none}
+        .chat-in:focus{border-color:var(--emerald)}
+        .chat-in::placeholder{color:var(--muted)}
+
+        /* BUTTONS */
+        .btn{padding:8px 16px;border-radius:10px;border:none;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+        .btn-p{background:linear-gradient(135deg,var(--emerald),var(--cyan));color:#fff}
+        .btn-p:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(16,185,129,.3)}
+        .btn-s{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border)}
+        .btn-s:hover{background:rgba(255,255,255,.1)}
+
+        .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+        .chip{padding:5px 12px;border-radius:100px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s}
+        .chip:hover{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:var(--emerald)}
+
+        /* REACT FLOW */
+        .rf{display:flex;align-items:center;justify-content:center;gap:0;padding:20px 0;flex-wrap:wrap}
+        .rs{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;min-width:110px;text-align:center;transition:all .5s;opacity:.35}
+        .rs.active{opacity:1;border-color:var(--emerald);box-shadow:0 0 20px rgba(16,185,129,.15);transform:scale(1.05)}
+        .rs.done{opacity:1;border-color:var(--emerald)}
+        .rs .si{font-size:24px}
+        .rs .sl{font-size:12px;font-weight:600}
+        .rs .sd{font-size:10px;color:var(--muted);max-width:130px;word-break:break-word}
+        .ra{font-size:20px;color:var(--muted);margin:0 4px;transition:color .3s}
+        .ra.active{color:var(--emerald)}
+
+        /* SCHEMA */
+        .schema-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+        @media(max-width:480px){.schema-grid{grid-template-columns:1fr}}
+        .s-name{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--cyan)}
+        .s-desc{font-size:13px;color:var(--text2);margin:6px 0 12px}
+        .s-params{background:rgba(0,0,0,.3);border-radius:10px;padding:14px;font-family:var(--mono);font-size:12px;line-height:1.7;overflow-x:auto}
+        .pn{color:var(--amber)}.pt{color:var(--purple)}.pr{color:var(--rose);font-size:10px;font-weight:700}
+
+        /* TRACE */
+        .trace-box{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+        .trace-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600}
+        .trace-hdr .fn{font-family:var(--mono);color:var(--cyan)}
+        .trace-body{padding:16px;font-family:var(--mono);font-size:12px;line-height:1.8;overflow-x:auto;max-height:400px;overflow-y:auto;white-space:pre-wrap;color:var(--text2)}
+        .jk{color:var(--cyan)}.js{color:var(--emerald)}.jn{color:var(--amber)}.jb{color:var(--purple)}
+
+        /* TEST CASE */
+        .tc{border-left:3px solid var(--emerald);padding-left:14px;margin-bottom:14px}
+        .tc-id{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--emerald)}
+        .tc-q{font-size:13px;margin:3px 0}
+        .tc-e{font-size:12px;color:var(--muted);font-style:italic}
+        .tc-c{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10px;font-weight:700}
+        .tc-c.low{background:rgba(16,185,129,.15);color:var(--emerald)}
+        .tc-c.medium{background:rgba(245,158,11,.15);color:var(--amber)}
+        .tc-c.high{background:rgba(244,63,94,.15);color:var(--rose)}
+
+        footer{text-align:center;padding:32px 0;color:var(--muted);font-size:12px;border-top:1px solid var(--border);margin-top:40px}
+        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+        code{font-family:var(--mono);background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px;font-size:12px}
+    </style>
+</head>
+<body>
+<div class="bg-orbs"><div class="orb"></div><div class="orb"></div><div class="orb"></div></div>
+<div class="container">
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-badge">💰 VinUni AI — Day 03 Lab — Đề tài: Quản lý Chi tiêu</div>
+    <h1>Trợ lý Quản lý Chi tiêu Cá nhân</h1>
+    <p>Demo tương tác Chatbot Baseline vs ReAct Agent (MCP Server) — ghi nhận chi tiêu, kiểm tra ngân sách, phân tích tài chính.</p>
+    <div class="hero-meta">
+        <span>👤 Dương Văn Thanh</span>
+        <span>📋 2A202602368</span>
+        <span>🏫 K4B</span>
+    </div>
+</section>
+
+<!-- 1. TỔNG QUAN -->
+<section class="sect">
+    <h2 class="sect-title">📊 1. Tổng quan & Dữ liệu mô phỏng</h2>
+    <p class="sect-desc">Thống kê hệ thống và dữ liệu mock chi tiêu tháng 9/2026.</p>
+
+    <div class="stats">
+        <div class="stat"><div class="stat-val">4</div><div class="stat-lbl">Cấp độ AI</div></div>
+        <div class="stat"><div class="stat-val">2</div><div class="stat-lbl">MCP Tools</div></div>
+        <div class="stat"><div class="stat-val">5</div><div class="stat-lbl">Test Cases</div></div>
+        <div class="stat"><div class="stat-val">3</div><div class="stat-lbl">LLM Providers</div></div>
+        <div class="stat"><div class="stat-val">8M₫</div><div class="stat-lbl">Ngân sách T9</div></div>
+        <div class="stat"><div class="stat-val">6.5M₫</div><div class="stat-lbl">Đã chi</div></div>
+    </div>
+
+    <div class="card">
+        <div style="font-weight:600;margin-bottom:12px">💳 Chi tiêu theo danh mục</div>
+        <div class="exp-grid">
+            <div class="exp-item"><div class="icon">🍜</div><div class="cat">Ăn uống</div><div class="amt">2,850,000₫</div></div>
+            <div class="exp-item"><div class="icon">🏠</div><div class="cat">Nhà ở</div><div class="amt">3,500,000₫</div></div>
+            <div class="exp-item"><div class="icon">🚌</div><div class="cat">Di chuyển</div><div class="amt">450,000₫</div></div>
+            <div class="exp-item"><div class="icon">🛒</div><div class="cat">Mua sắm</div><div class="amt">1,200,000₫</div></div>
+            <div class="exp-item"><div class="icon">📚</div><div class="cat">Học tập</div><div class="amt">500,000₫</div></div>
+        </div>
+        <table class="tbl">
+            <thead><tr><th>Ngày</th><th>Danh mục</th><th>Mô tả</th><th>Số tiền</th></tr></thead>
+            <tbody>
+                <tr><td>13/09</td><td>🍜 Ăn uống</td><td>Bữa trưa phở bò</td><td style="color:var(--amber);font-weight:600">85,000₫</td></tr>
+                <tr><td>12/09</td><td>🚌 Di chuyển</td><td>Grab đi học</td><td style="color:var(--amber);font-weight:600">45,000₫</td></tr>
+                <tr><td>11/09</td><td>📚 Học tập</td><td>Mua sách AI</td><td style="color:var(--amber);font-weight:600">350,000₫</td></tr>
+                <tr><td>10/09</td><td>🛒 Mua sắm</td><td>Áo phông mới</td><td style="color:var(--amber);font-weight:600">250,000₫</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- 2. SO SÁNH CHAT -->
+<section class="sect">
+    <h2 class="sect-title">💬 2. So sánh Chatbot vs ReAct Agent</h2>
+    <p class="sect-desc">Nhấn gợi ý hoặc gõ câu hỏi để thấy sự khác biệt giữa Chatbot (không Tool) và ReAct Agent (có Tool MCP).</p>
+
+    <div class="chips">
+        <span class="chip" onclick="sendBoth('Cho tôi vài mẹo tiết kiệm tiền')">💡 Mẹo tiết kiệm</span>
+        <span class="chip" onclick="sendBoth('Ghi nhận khoản chi 85000 VND cho bữa trưa hôm nay vào danh mục Ăn uống')">🍜 Ghi chi 85k</span>
+        <span class="chip" onclick="sendBoth('Kiểm tra ngân sách tháng này, tôi đã chi 6500000 VND và ngân sách là 8000000 VND')">📊 Ngân sách</span>
+        <span class="chip" onclick="sendBoth('Tháng này tôi đã chi 6500000 VND, ngân sách 8000000 VND. Chi thêm 2000000 mua sắm có vượt không?')">⚠️ Vượt ngân sách?</span>
+        <span class="chip" onclick="sendBoth('Ghi nhận khoản chi năm mươi nghìn nhưng tôi không cho biết loại tiền và danh mục')">❓ Thiếu info</span>
+    </div>
+
+    <div class="chat-wrap">
+        <div class="chat-panel">
+            <div class="chat-hdr"><div class="dot" style="background:var(--blue)"></div>💬 Chatbot Baseline (Cấp 2)</div>
+            <div class="chat-msgs" id="cb-msg"><div class="msg bot">Xin chào! Tôi là Trợ lý Chi tiêu (Chatbot). Tôi tư vấn chung nhưng <b>không có Tool ghi giao dịch</b>.</div></div>
+            <div class="chat-bar">
+                <input class="chat-in" id="cb-in" placeholder="Nhập câu hỏi..." onkeydown="if(event.key==='Enter')sendCB()">
+                <button class="btn btn-p" onclick="sendCB()">Gửi</button>
+            </div>
+        </div>
+        <div class="chat-panel">
+            <div class="chat-hdr"><div class="dot" style="background:var(--emerald)"></div>🧠 ReAct Agent (Cấp 3 — MCP)</div>
+            <div class="chat-msgs" id="ag-msg"><div class="msg bot">Xin chào! Tôi là Trợ lý Chi tiêu Thông minh (ReAct Agent) với Tool <b>record_expense</b> & <b>check_budget</b> qua MCP.</div></div>
+            <div class="chat-bar">
+                <input class="chat-in" id="ag-in" placeholder="Nhập câu hỏi..." onkeydown="if(event.key==='Enter')sendAG()">
+                <button class="btn btn-p" onclick="sendAG()">Gửi</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- 3. REACT LOOP -->
+<section class="sect">
+    <h2 class="sect-title">🔄 3. Trực quan hóa ReAct Loop</h2>
+    <p class="sect-desc">Nhấn nút để xem từng bước Thought → Action → Observation → Final Answer.</p>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="btn btn-p" onclick="runReact('record')">🍜 Ghi chi 85k</button>
+        <button class="btn btn-s" onclick="runReact('budget')">📊 Kiểm tra ngân sách</button>
+        <button class="btn btn-s" onclick="runReact('general')">💬 Câu hỏi chung</button>
+        <button class="btn btn-s" onclick="resetReact()">🔄 Reset</button>
+    </div>
+
+    <div class="card">
+        <div class="rf">
+            <div class="rs" id="s0"><div class="si">👤</div><div class="sl">Query</div><div class="sd" id="s0t">Đang chờ...</div></div>
+            <div class="ra" id="a0">→</div>
+            <div class="rs" id="s1"><div class="si">🧠</div><div class="sl">Thought</div><div class="sd" id="s1t">Suy luận...</div></div>
+            <div class="ra" id="a1">→</div>
+            <div class="rs" id="s2"><div class="si">🛠️</div><div class="sl">Action</div><div class="sd" id="s2t">Tool Call...</div></div>
+            <div class="ra" id="a2">→</div>
+            <div class="rs" id="s3"><div class="si">👁️</div><div class="sl">Observation</div><div class="sd" id="s3t">MCP Result...</div></div>
+            <div class="ra" id="a3">→</div>
+            <div class="rs" id="s4"><div class="si">🏁</div><div class="sl">Final Answer</div><div class="sd" id="s4t">Kết luận...</div></div>
+        </div>
+    </div>
+    <div class="card" id="rlog" style="display:none">
+        <div style="font-weight:600;margin-bottom:10px">📋 Chi tiết thực thi</div>
+        <div id="rlog-body" style="font-family:var(--mono);font-size:12px;line-height:1.8"></div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- 4. TOOL SCHEMAS -->
+<section class="sect">
+    <h2 class="sect-title">🛠️ 4. Tool Schemas & Test</h2>
+    <p class="sect-desc">Hai Tool MCP Server: ghi khoản chi & kiểm tra ngân sách. Nhấn Test để xem JSON-RPC response.</p>
+
+    <div class="schema-grid">
+        <div class="card">
+            <div class="s-name">💸 record_expense</div>
+            <div class="s-desc">Ghi nhận khoản chi tiêu mới.</div>
+            <div class="s-params">
+<span class="pn">amount</span>: <span class="pt">number</span> <span class="pr">[REQUIRED]</span>
+  → Số tiền (VD: 85000)
+<span class="pn">currency</span>: <span class="pt">string</span> <span class="pr">[REQUIRED]</span>
+  → Loại tiền (VD: 'VND')
+<span class="pn">category</span>: <span class="pt">string</span> <span class="pr">[REQUIRED]</span>
+  → Danh mục (VD: 'Ăn uống')
+<span class="pn">description</span>: <span class="pt">string</span>
+  → Mô tả giao dịch
+            </div>
+            <div style="margin-top:12px"><button class="btn btn-s" onclick="testTool('record_expense',{amount:85000,currency:'VND',category:'Ăn uống',description:'Bữa trưa'})">▶ Test</button></div>
+            <div id="tr-record_expense" style="margin-top:10px"></div>
+        </div>
+        <div class="card">
+            <div class="s-name">📊 check_budget</div>
+            <div class="s-desc">Kiểm tra ngân sách tháng hiện tại.</div>
+            <div class="s-params">
+<span class="pn">month</span>: <span class="pt">string</span> <span class="pr">[REQUIRED]</span>
+  → Tháng (VD: '09/2026')
+<span class="pn">budget_limit</span>: <span class="pt">number</span>
+  → Giới hạn ngân sách (VD: 8000000)
+            </div>
+            <div style="margin-top:12px"><button class="btn btn-s" onclick="testTool('check_budget',{month:'09/2026',budget_limit:8000000})">▶ Test</button></div>
+            <div id="tr-check_budget" style="margin-top:10px"></div>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- 5. TRACE LOG -->
+<section class="sect">
+    <h2 class="sect-title">📈 5. Waterfall Trace Log</h2>
+    <p class="sect-desc">Sinh file vết <code>trace_waterfall.json</code> mô phỏng.</p>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn btn-p" onclick="genTrace('full')">🚀 Trace đầy đủ (5 TC)</button>
+        <button class="btn btn-s" onclick="genTrace('record')">💸 Trace ghi chi</button>
+        <button class="btn btn-s" onclick="genTrace('budget')">📊 Trace ngân sách</button>
+    </div>
+
+    <div class="trace-box">
+        <div class="trace-hdr"><span class="fn">📄 docs/trace_waterfall.json</span><button class="btn btn-s" onclick="copyTrace()">📋 Copy</button></div>
+        <div class="trace-body" id="trace-out">// Nhấn nút để sinh Trace Log...</div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- 6. TEST CASES -->
+<section class="sect">
+    <h2 class="sect-title">🧪 6. Bộ 5 Test Cases</h2>
+    <p class="sect-desc">Từ <code>config/test_cases.json</code></p>
+    <div class="card" id="tc-box"></div>
+</section>
+
+</div>
+
+<footer>💰 Trợ lý Quản lý Chi tiêu — Dương Văn Thanh — 2A202602368 — K4B</footer>
+
+<script>
+// === MOCK DATA ===
+const BUDGET={month:"09/2026",limit:8000000,spent:6500000,remaining:1500000,cats:{"Ăn uống":2850000,"Nhà ở":3500000,"Di chuyển":450000,"Mua sắm":1200000,"Học tập":500000}};
+const TC=[
+    {id:"TC01",type:"direct_query",q:"Cho tôi vài mẹo tiết kiệm tiền hàng tháng",exp:"Chatbot trả lời trực tiếp, không cần gọi Tool.",c:"Low"},
+    {id:"TC02",type:"single_tool_query",q:"Hãy tra cứu thông tin học vụ của sinh viên SV2026001.",exp:"Agent gọi Tool 'academic_query'.",c:"Medium"},
+    {id:"TC03",type:"expense_recording",q:"Ghi nhận một khoản chi 85000 VND cho bữa trưa hôm nay vào danh mục Ăn uống.",exp:"Agent trích xuất số tiền, danh mục rồi gọi Tool 'record_expense'.",c:"Medium"},
+    {id:"TC04",type:"multi_step_reasoning",q:"Tháng này tôi đã chi 6500000 VND, ngân sách tháng là 8000000 VND. Hãy kiểm tra số tiền còn lại và cho biết nếu tôi chi thêm 2000000 VND cho mua sắm thì có vượt ngân sách không.",exp:"Agent suy luận multi-step: tính số dư, phân tích khoản chi dự kiến.",c:"High"},
+    {id:"TC05",type:"edge_case_handling",q:"Hãy ghi nhận khoản chi 'năm mươi nghìn' nhưng tôi không cho biết loại tiền và danh mục chi tiêu.",exp:"Agent nhận diện thông tin thiếu, hỏi lại thay vì tự bịa.",c:"Medium"}
+];
+let expN=7;
+
+// === TOOL EXECUTION ===
+function execRecord(a,cur,cat,desc){
+    expN++;const id=`EXP${String(expN).padStart(3,'0')}`;
+    return{status:"SUCCESS",expense_id:id,data:{amount:a,currency:cur||"VND",category:cat,description:desc||""},message:`✅ Đã ghi nhận ${a.toLocaleString('vi-VN')} ${cur||'VND'} cho "${cat}".`};
+}
+function execBudget(m,lim){
+    const l=lim||BUDGET.limit,s=BUDGET.spent,r=l-s,p=((s/l)*100).toFixed(1);
+    return{status:"SUCCESS",month:m||BUDGET.month,data:{budget_limit:l,total_spent:s,remaining:r,usage_percent:+p,categories:BUDGET.cats,is_over_budget:r<0},message:`📊 T${(m||BUDGET.month)}: Đã chi ${s.toLocaleString('vi-VN')}₫/${l.toLocaleString('vi-VN')}₫ (${p}%). Còn ${r.toLocaleString('vi-VN')}₫.`};
+}
+function dispatch(n,a){
+    if(n==='record_expense')return execRecord(a.amount,a.currency,a.category,a.description);
+    if(n==='check_budget')return execBudget(a.month,a.budget_limit);
+    return{status:"UNKNOWN_TOOL",error:`Tool '${n}' không tồn tại!`};
+}
+function mcp(n,a){return{jsonrpc:"2.0",server:"expense-tracker-mcp-server",tool:n,result:dispatch(n,a)};}
+
+// === CHAT ===
+function addMsg(id,t,cls){const c=document.getElementById(id),m=document.createElement('div');m.className='msg '+cls;m.innerHTML=t;c.appendChild(m);c.scrollTop=c.scrollHeight;}
+
+function cbResp(q){
+    const l=q.toLowerCase();
+    if(l.includes('ghi')&&(l.includes('chi')||l.includes('khoản')))return"Tôi <b>không có Tool lưu giao dịch</b>. Hãy dùng ứng dụng quản lý tài chính hoặc Excel.";
+    if(l.includes('ngân sách')||l.includes('còn lại')||l.includes('budget')||l.includes('kiểm tra'))return"Tôi không truy cập được dữ liệu tài chính thời gian thực. Hãy kiểm tra trên app quản lý chi tiêu.";
+    if(l.includes('vượt'))return"Tôi không có dữ liệu chi tiêu thực tế để tính toán. Bạn nên tự kiểm tra bảng tính cá nhân.";
+    if(l.includes('tiết kiệm')||l.includes('mẹo'))return"💡 Mẹo tiết kiệm:<br>• Quy tắc 50/30/20<br>• Nấu ăn tại nhà<br>• Ghi chép chi tiêu hàng ngày<br>• Hạn chế mua sắm impulsive";
+    if(l.includes('thiếu')||l.includes('không cho biết')||l.includes('không biết'))return"Tôi không đủ thông tin để xử lý. Vui lòng cung cấp đầy đủ số tiền, loại tiền và danh mục.";
+    return"Xin chào! Tôi tư vấn chung về tài chính cá nhân nhưng không thể ghi nhận giao dịch hay kiểm tra ngân sách thực tế.";
+}
+
+function agResp(q){
+    const l=q.toLowerCase();
+    if((l.includes('ghi')||l.includes('record'))&&(l.includes('chi')||l.includes('khoản'))){
+        const am=q.match(/(\d[\d.,]*)\s*(VND|vnd|đ)?/);const amount=am?parseInt(am[1].replace(/[.,]/g,'')):null;
+        let cat='Khác';
+        if(l.includes('ăn')||l.includes('trưa')||l.includes('tối'))cat='Ăn uống';
+        else if(l.includes('di chuyển')||l.includes('grab'))cat='Di chuyển';
+        else if(l.includes('mua sắm'))cat='Mua sắm';
+        else if(l.includes('học')||l.includes('sách'))cat='Học tập';
+        if(!amount||l.includes('không cho biết')||l.includes('không biết')){
+            return[{t:'sys',m:'🧠 Thought: Thiếu thông tin bắt buộc.'},{t:'bot',m:'⚠️ Cần thêm: <b>Số tiền</b> cụ thể, <b>Loại tiền</b>, <b>Danh mục</b>. Vui lòng bổ sung!'}];
+        }
+        const r=dispatch('record_expense',{amount,currency:'VND',category:cat});
+        return[
+            {t:'sys',m:`🧠 Thought: Trích xuất ${amount.toLocaleString()} VND, "${cat}" → gọi record_expense`},
+            {t:'sys',m:`🛠️ Action: record_expense({amount:${amount}, category:"${cat}"})`},
+            {t:'sys',m:`👁️ Observation: SUCCESS, id=${r.expense_id}`},
+            {t:'bot',m:r.message}
+        ];
+    }
+    if(l.includes('ngân sách')||l.includes('còn lại')||l.includes('kiểm tra')||l.includes('budget')||l.includes('vượt')){
+        const r=dispatch('check_budget',{month:'09/2026',budget_limit:8000000});const d=r.data;
+        let extra='';const addM=q.match(/chi thêm\s+(\d[\d.,]*)/);
+        if(addM){const a=parseInt(addM[1].replace(/[.,]/g,''));const af=d.remaining-a;
+            extra=af<0?`<br>⚠️ Chi thêm ${a.toLocaleString()}₫ → <b style="color:var(--rose)">VƯỢT ${Math.abs(af).toLocaleString()}₫!</b>`:`<br>✅ Chi thêm ${a.toLocaleString()}₫ → vẫn OK (còn ${af.toLocaleString()}₫).`;
+        }
+        return[
+            {t:'sys',m:'🧠 Thought: Cần kiểm tra ngân sách → gọi check_budget'},
+            {t:'sys',m:'🛠️ Action: check_budget({month:"09/2026", budget_limit:8000000})'},
+            {t:'sys',m:`👁️ Observation: spent=${d.total_spent.toLocaleString()}, remaining=${d.remaining.toLocaleString()}`},
+            {t:'bot',m:r.message+extra}
+        ];
+    }
+    return[
+        {t:'sys',m:'🧠 Thought: Câu hỏi chung, trả lời trực tiếp.'},
+        {t:'bot',m:'💡 Mẹo tiết kiệm:<br>• Quy tắc 50/30/20<br>• Ghi chép mọi khoản chi<br>• Nấu ăn tại nhà<br>• Đặt mục tiêu tiết kiệm<br><br>Cần ghi chi tiêu hoặc kiểm tra ngân sách? Hãy cho tôi biết!'}
+    ];
+}
+
+function sendCB(){const i=document.getElementById('cb-in'),q=i.value.trim();if(!q)return;addMsg('cb-msg',q,'user');i.value='';setTimeout(()=>addMsg('cb-msg',cbResp(q),'bot'),400);}
+function sendAG(){const i=document.getElementById('ag-in'),q=i.value.trim();if(!q)return;addMsg('ag-msg',q,'user');i.value='';const r=agResp(q);let d=300;r.forEach(s=>{setTimeout(()=>addMsg('ag-msg',s.m,s.t==='sys'?'sys':'bot'),d);d+=500;});}
+function sendBoth(q){document.getElementById('cb-in').value=q;document.getElementById('ag-in').value=q;sendCB();sendAG();}
+
+// === REACT LOOP ===
+function resetReact(){for(let i=0;i<5;i++){document.getElementById('s'+i).classList.remove('active','done');document.getElementById('s'+i+'t').textContent=['Đang chờ...','Suy luận...','Tool Call...','MCP Result...','Kết luận...'][i];}for(let i=0;i<4;i++)document.getElementById('a'+i).classList.remove('active');document.getElementById('rlog').style.display='none';}
+function step(i,txt){return new Promise(r=>{setTimeout(()=>{if(i>0){document.getElementById('s'+(i-1)).classList.remove('active');document.getElementById('s'+(i-1)).classList.add('done');document.getElementById('a'+(i-1)).classList.add('active');}document.getElementById('s'+i).classList.add('active');document.getElementById('s'+i+'t').textContent=txt;r();},700);});}
+
+async function runReact(type){
+    resetReact();document.getElementById('rlog').style.display='block';const lg=document.getElementById('rlog-body');lg.innerHTML='';
+    let q,th,ac,ob,ans,lat;
+    if(type==='record'){q='Ghi 85000 VND bữa trưa, Ăn uống';th='Trích xuất 85k VND, "Ăn uống" → record_expense';ac='record_expense({amount:85000,...})';const r=dispatch('record_expense',{amount:85000,currency:'VND',category:'Ăn uống'});ob='SUCCESS: '+r.expense_id;ans=r.message;lat=132;}
+    else if(type==='budget'){q='Kiểm tra ngân sách T9 (6.5M/8M)';th='Cần số dư → check_budget';ac='check_budget({month:"09/2026"})';const r=dispatch('check_budget',{month:'09/2026',budget_limit:8000000});ob='Spent '+r.data.total_spent.toLocaleString()+', Remain '+r.data.remaining.toLocaleString();ans=r.message;lat=98;}
+    else{q='Mẹo tiết kiệm tiền?';th='Câu hỏi chung → trả lời';ac='Không cần Tool';ob='N/A';ans='Quy tắc 50/30/20, ghi chép chi tiêu...';lat=42;}
+    function log(ic,lb,dt,cl){lg.innerHTML+=`<div style="margin-bottom:6px"><span style="color:${cl}">${ic} [${lb}]:</span> ${dt}</div>`;}
+    await step(0,q);log('👤','Query',q,'var(--emerald)');
+    await step(1,th);log('🧠','Thought',th,'var(--cyan)');
+    await step(2,ac);log('🛠️','Action',ac,'var(--amber)');
+    await step(3,ob);log('👁️','Observation',ob,'var(--purple)');
+    await step(4,ans);log('🏁','Answer',ans,'var(--emerald)');log('⏱️','Latency',lat+' ms','var(--muted)');
+    setTimeout(()=>{document.getElementById('s4').classList.remove('active');document.getElementById('s4').classList.add('done');},400);
+}
+
+// === TOOL TEST ===
+function testTool(n,a){const r=mcp(n,a);document.getElementById('tr-'+n).innerHTML=`<div style="background:rgba(0,0,0,.3);border-radius:10px;padding:12px;font-family:var(--mono);font-size:11px;line-height:1.7;overflow-x:auto"><div style="color:var(--cyan);margin-bottom:4px">📡 MCP JSON-RPC:</div><pre style="color:var(--text2);white-space:pre-wrap;margin:0">${hl(JSON.stringify(r,null,2))}</pre></div>`;}
+
+// === TRACE ===
+function genTrace(mode){
+    let t=[];
+    if(mode==='record'||mode==='full'){const r=dispatch('record_expense',{amount:85000,currency:'VND',category:'Ăn uống',description:'Bữa trưa'});t.push({step:t.length+1,query:"Ghi 85000 VND bữa trưa",action_type:"TOOL_EXECUTION",tool_name:"record_expense",arguments:{amount:85000,currency:"VND",category:"Ăn uống"},observation:r,latency_ms:132.5});t.push({step:t.length+1,query:"Ghi 85000 VND bữa trưa",action_type:"FINAL_ANSWER",thought:"Ghi nhận thành công.",output:r.message,latency_ms:10});}
+    if(mode==='budget'||mode==='full'){const r=dispatch('check_budget',{month:'09/2026',budget_limit:8000000});t.push({step:t.length+1,query:"Kiểm tra ngân sách T9",action_type:"TOOL_EXECUTION",tool_name:"check_budget",arguments:{month:"09/2026",budget_limit:8000000},observation:r,latency_ms:98.3});t.push({step:t.length+1,query:"Kiểm tra ngân sách T9",action_type:"FINAL_ANSWER",thought:"Tổng hợp kết quả.",output:r.message,latency_ms:10});}
+    if(mode==='full'){
+        t.push({step:t.length+1,query:"Mẹo tiết kiệm",action_type:"FINAL_ANSWER",thought:"Câu hỏi chung.",output:"Quy tắc 50/30/20. Ghi chép hàng ngày.",latency_ms:45.2});
+        t.push({step:t.length+1,query:"Chi thêm 2tr có vượt ngân sách?",action_type:"TOOL_EXECUTION",tool_name:"check_budget",arguments:{month:"09/2026",budget_limit:8000000},observation:{status:"SUCCESS",remaining:1500000,total_spent:6500000},latency_ms:105.7});
+        t.push({step:t.length+1,query:"Chi thêm 2tr vượt không?",action_type:"FINAL_ANSWER",thought:"Dư 1.5M, chi 2M → vượt 500K!",output:"⚠️ VƯỢT ngân sách 500,000₫!",latency_ms:10});
+        t.push({step:t.length+1,query:"Ghi 'năm mươi nghìn' thiếu info",action_type:"FINAL_ANSWER",thought:"Thiếu loại tiền & danh mục. Hỏi lại.",output:"Cần bổ sung: loại tiền, danh mục.",latency_ms:38.9});
+    }
+    const j=JSON.stringify(t,null,2);document.getElementById('trace-out').innerHTML=hl(j);window._tr=j;
+}
+function copyTrace(){if(window._tr)navigator.clipboard.writeText(window._tr).then(()=>alert('✅ Đã copy!'));}
+
+// === HIGHLIGHT ===
+function hl(j){return j.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g,m=>{let c='js';if(/:$/.test(m)){c='jk';m=m.replace(/:$/,'')+':';}return`<span class="${c}">${m}</span>`;}).replace(/\b(-?\d+\.?\d*)\b/g,'<span class="jn">$1</span>').replace(/\b(true|false|null)\b/g,'<span class="jb">$1</span>');}
+
+// === RENDER TEST CASES ===
+document.getElementById('tc-box').innerHTML=TC.map(t=>`<div class="tc"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="tc-id">${t.id}</span><span class="tc-c ${t.c.toLowerCase()}">${t.c}</span></div><div class="tc-q">"${t.q}"</div><div class="tc-e">⇢ ${t.exp}</div></div>`).join('');
+</script>
+</body>
+</html>

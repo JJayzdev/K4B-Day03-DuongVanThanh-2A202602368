@@ -3,9 +3,9 @@
     "step": 1,
     "query": "Chào bạn, bạn có thể giới thiệu quy chế học vụ cơ bản của Đại học VinUni không?",
     "action_type": "FINAL_ANSWER",
-    "thought": "Câu hỏi chung về quy chế học vụ, trả lời trực tiếp không cần gọi Tool.",
-    "output": "[Mock Agent Response]: Xin chào! Quy chế học vụ VinUni yêu cầu sinh viên tích lũy tối thiểu 120 tín chỉ và duy trì GPA trên 2.0 để tốt nghiệp.",
-    "latency_ms": 2845.93
+    "thought": "Gemini phản hồi trực tiếp bằng văn bản (không cần gọi công cụ).",
+    "output": "Chào bạn! Dưới đây là các điểm chính trong **Quy chế Học vụ cơ bản của Đại học VinUni** dành cho sinh viên:\n\n### 1. Hệ thống Tín chỉ và Đánh giá (Grading System)\n* **Thang điểm:** VinUni áp dụng hệ thống thang điểm chữ (A, B, C, D, F) tương ứng với thang điểm 4.0 (GPA).\n* **Đánh giá học phần:** Kết quả học tập từng môn được đánh giá qua quá trình (tiểu luận, bài tập, thuyết trình, kiểm tra giữa kỳ) và thi/đồ án kết thúc học phần.\n* **Tín chỉ (Credit Hours):** Sinh viên cần hoàn thành đủ số tín chỉ quy định của chương trình đào tạo để đủ điều kiện tốt nghiệp (thường từ 120 - 160+ tín chỉ tùy theo ngành).\n\n### 2. Tiêu chuẩn Xếp loại Học lực (Academic Standing)\n* **Học lực Tốt / Khá (Good Standing):** Sinh viên duy trì GPA tích lũy (Cumulative GPA) từ $2.0 / 4.0$ trở lên.\n* **Cảnh báo học tập (Academic Probation):** Sinh viên có GPA tích lũy dưới $2.0$ trong một học kỳ sẽ nhận cảnh báo học tập và được cố vấn học tập hỗ trợ xây dựng kế hoạch cải thiện.\n* **Buộc xuất học (Academic Dismissal):** Áp dụng nếu sinh viên không cải thiện được kết quả học tập sau thời gian cảnh báo học tập theo quy định.\n\n### 3. Đăng ký Môn học và Rút môn (Course Registration & Withdrawal)\n* **Thêm/Hủy môn (Add/Drop Period):** Sinh viên được điều chỉnh danh sách môn học đăng ký trong thời gian Add/Drop (thường là 1–2 tuần đầu học kỳ).\n* **Rút môn học (Course Withdrawal):** Sau thời hạn Add/Drop, sinh viên có thể xin rút môn học trước thời hạn quy định (nhận điểm **W** trên bảng điểm, không tính vào GPA nhưng vẫn phải nộp học phí).\n\n### 4. Liêm chính Học thuật (Academic Integrity)\n* VinUni áp dụng chính sách nghiêm ngặt về **Liêm chính Học thuật**.\n* Các hành vi gian lận (sao chép bài, gian lận thi cử, đạo văn/plagiarism, tự ý dùng AI khi không được cho phép) sẽ bị xử lý nghiêm khắc tùy theo mức độ nghiêm trọng (từ nhận điểm 0 bài thi, trượt môn đến đình chỉ học tập).\n\n---\n*(Lưu ý: Để tra cứu hồ sơ cá nhân hoặc đăng ký lịch hẹn tư vấn học vụ cụ thể, bạn vui lòng cung cấp **Mã sinh viên** nhé!)*",
+    "latency_ms": 6999.08
   },
   {
     "step": 1,
@@ -15,15 +15,50 @@
     "arguments": {
       "student_id": "SV2026001"
     },
-    "observation": {},
-    "latency_ms": 799.12
+    "observation": {
+      "status": "SUCCESS",
+      "student_id": "SV2026001",
+      "data": {
+        "full_name": "Nguyễn Văn An",
+        "class": "AI-K4",
+        "gpa": 3.85,
+        "email": "an.nv@vinuni.edu.vn",
+        "status": "Đang học",
+        "advisor": "PGS.TS Nguyễn Văn A"
+      }
+    },
+    "latency_ms": 2246.91
   },
   {
     "step": 2,
     "query": "Hãy tra cứu thông tin học vụ của sinh viên SV2026001.",
     "action_type": "FINAL_ANSWER",
     "thought": "Tổng hợp kết quả từ MCP Server thành công.",
-    "output": "Chưa thể trả lời chi tiết do chưa nhận được dữ liệu từ MCP Server (hãy hoàn thành TODO 2.1).",
+    "output": "Kết quả tra cứu cho sinh viên SV2026001 (Nguyễn Văn An): Lớp AI-K4, GPA: 3.85, Email: an.nv@vinuni.edu.vn, Trạng thái: Đang học, Cố vấn: PGS.TS Nguyễn Văn A.",
     "latency_ms": 10.0
+  },
+  {
+    "step": 1,
+    "query": "Ghi nhận một khoản chi 85000 VND cho bữa trưa hôm nay vào danh mục Ăn uống.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Gemini phản hồi trực tiếp bằng văn bản (không cần gọi công cụ).",
+    "output": "Tôi là Trợ lý Học vụ của Đại học VinUni, chỉ có chức năng hỗ trợ tra cứu thông tin học vụ, điểm số và đặt lịch hẹn tư vấn học tập cho sinh viên. \n\nHiện tại, tôi không hỗ trợ quản lý chi tiêu cá nhân hoặc ghi nhận các khoản thu chi. Bạn vui lòng sử dụng các ứng dụng quản lý tài chính/chi tiêu chuyên dụng để thực hiện việc này nhé!",
+    "latency_ms": 2709.17
+  },
+  {
+    "step": 1,
+    "query": "Tháng này tôi đã chi 6500000 VND, ngân sách tháng là 8000000 VND. Hãy kiểm tra số tiền còn lại và cho biết nếu tôi chi thêm 2000000 VND cho mua sắm thì có vượt ngân sách không.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Gemini phản hồi trực tiếp bằng văn bản (không cần gọi công cụ).",
+    "output": "Dưới đây là chi tiết kiểm tra ngân sách của bạn:\n\n1. **Số tiền còn lại hiện tại:**\n   * Ngân sách tháng: **8.000.000 VND**\n   * Đã chi tiêu: **6.500.000 VND**\n   * Số tiền còn lại: $8.000.000 - 6.500.000 =$ **1.500.000 VND**\n\n2. **Dự tính khi chi thêm 2.000.000 VND cho mua sắm:**\n   * Tổng chi tiêu dự kiến: $6.500.000 + 2.000.000 =$ **8.500.000 VND**\n   * **Kết luận:** Bạn **SẼ VƯỢT NGÂN SÁCH** thêm **500.000 VND** (vì số tiền còn lại 1.500.000 VND không đủ cho khoản mua sắm 2.000.000 VND). \n\nBạn nên cân nhắc điều chỉnh lại hạn mức mua sắm dưới **1.500.000 VND** để đảm bảo duy trì trong ngân sách tháng này!",
+    "latency_ms": 3928.1
+  },
+  {
+    "step": 1,
+    "query": "Hãy ghi nhận khoản chi 'năm mươi nghìn' nhưng tôi không cho biết loại tiền và danh mục chi tiêu.",
+    "action_type": "FINAL_ANSWER",
+    "thought": "Gemini phản hồi trực tiếp bằng văn bản (không cần gọi công cụ).",
+    "output": "Tôi là Trợ lý Học vụ của Đại học VinUni, chỉ có chức năng hỗ trợ tra cứu thông tin học vụ (hồ sơ sinh viên, điểm số, chương trình học) và đặt lịch hẹn tư vấn với cố vấn học tập. \n\nHiện tại, tôi **không có chức năng ghi nhận hay quản lý chi tiêu tài chính cá nhân**. Nếu bạn có thắc mắc hoặc cần hỗ trợ về các vấn đề học tập tại VinUni, vui lòng cho tôi biết nhé!",
+    "latency_ms": 4304.05
   }
 ]
